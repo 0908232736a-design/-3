@@ -4,7 +4,9 @@
    - 任何人都可新增/編輯/刪除（資料存在 localStorage）
 */
 const DEFAULT_CATEGORIES = ['社會關係','社會互動','社會結構','功能論','衝突論','互動論'];
-const STORAGE_KEY = 'reading_notes_simple_v1';
+const STORAGE_KEY = 'reading_notes_simple_v3';
+const CATEGORIES_KEY = 'reading_categories_v3';
+
 // DOM elements
 const categoryList = document.getElementById('category-list');
 const noteCategory = document.getElementById('note-category');
@@ -21,8 +23,10 @@ const cancelEditBtn = document.getElementById('cancel-edit');
 const searchInput = document.getElementById('search');
 const voiceTitleBtn = document.getElementById('voice-title-btn');
 const voiceContentBtn = document.getElementById('voice-content-btn');
+const addCategoryBtn = document.getElementById('add-category-btn');
 
 let notes = [];
+let categories = [...DEFAULT_CATEGORIES];
 let editingId = null;
 let activeCategory = '全部';
 
@@ -103,16 +107,17 @@ function startVoiceInput(target){
 function updateVoiceButtonState(){
   if(voiceTitleBtn){
     voiceTitleBtn.textContent = isRecognizing && currentVoiceTarget === 'title' ? '🎤 錄音中...' : '🎤';
-    voiceTitleBtn.style.background = isRecognizing && currentVoiceTarget === 'title' ? '#ff4444' : '#4CAF50';
+    voiceTitleBtn.classList.toggle('recording', isRecognizing && currentVoiceTarget === 'title');
   }
   if(voiceContentBtn){
     voiceContentBtn.textContent = isRecognizing && currentVoiceTarget === 'content' ? '🎤 錄音中...' : '🎤';
-    voiceContentBtn.style.background = isRecognizing && currentVoiceTarget === 'content' ? '#ff4444' : '#4CAF50';
+    voiceContentBtn.classList.toggle('recording', isRecognizing && currentVoiceTarget === 'content');
   }
 }
 
 function init(){
   loadNotes();
+  loadCategories();
   renderCategoryList();
   populateCategorySelect();
   renderNotes();
@@ -135,6 +140,11 @@ function init(){
     voiceContentBtn.addEventListener('click', ()=> startVoiceInput('content'));
   }
   
+  // 新增分類按鈕
+  if(addCategoryBtn){
+    addCategoryBtn.addEventListener('click', addNewCategory);
+  }
+  
   updatePreview();
 }
 
@@ -145,9 +155,60 @@ function loadNotes(){
   } else notes = [];
 }
 
+function loadCategories(){
+  const raw = localStorage.getItem(CATEGORIES_KEY);
+  if(raw){
+    try{
+      const saved = JSON.parse(raw);
+      if(Array.isArray(saved) && saved.length > 0){
+        categories = saved;
+        return;
+      }
+    }catch(e){}
+  }
+  categories = [...DEFAULT_CATEGORIES];
+}
+
 function saveNotes(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); }
 
+function saveCategories(){ localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories)); }
+
 function uid(){ return 'n_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+function addNewCategory(){
+  const newCat = prompt('請輸入新分類名稱:');
+  if(!newCat || !newCat.trim()) return;
+  const trimmed = newCat.trim();
+  if(categories.includes(trimmed)){
+    alert('此分類已存在');
+    return;
+  }
+  categories.push(trimmed);
+  saveCategories();
+  renderCategoryList();
+  populateCategorySelect();
+  alert(`已新增分類: ${trimmed}`);
+}
+
+function deleteCategory(cat){
+  if(DEFAULT_CATEGORIES.includes(cat)){
+    alert('預設分類無法刪除');
+    return;
+  }
+  if(!confirm(`確認刪除分類「${cat}」?\n\n注意: 此分類下的筆記不會被刪除,但會失去分類標籤。`)) return;
+  
+  categories = categories.filter(c => c !== cat);
+  saveCategories();
+  
+  // 如果當前選中的是被刪除的分類,切換到「全部」
+  if(activeCategory === cat){
+    activeCategory = '全部';
+  }
+  
+  renderCategoryList();
+  populateCategorySelect();
+  renderNotes();
+}
 
 function renderCategoryList(){
   categoryList.innerHTML = '';
@@ -156,18 +217,36 @@ function renderCategoryList(){
   allLi.className = activeCategory==='全部'?'active':'';
   allLi.onclick = ()=>{ activeCategory='全部'; renderCategoryList(); renderNotes(); }
   categoryList.appendChild(allLi);
-  DEFAULT_CATEGORIES.forEach(cat=>{
+  
+  categories.forEach(cat=>{
     const li = document.createElement('li');
-    li.textContent = cat;
     li.className = activeCategory===cat?'active':'';
-    li.onclick = ()=>{ activeCategory=cat; renderCategoryList(); renderNotes(); }
+    
+    const span = document.createElement('span');
+    span.textContent = cat;
+    span.onclick = ()=>{ activeCategory=cat; renderCategoryList(); renderNotes(); }
+    li.appendChild(span);
+    
+    // 自訂分類才顯示刪除按鈕
+    if(!DEFAULT_CATEGORIES.includes(cat)){
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '✕';
+      delBtn.className = 'delete-category-btn';
+      delBtn.title = '刪除此分類';
+      delBtn.onclick = (e)=>{
+        e.stopPropagation();
+        deleteCategory(cat);
+      };
+      li.appendChild(delBtn);
+    }
+    
     categoryList.appendChild(li);
   });
 }
 
 function populateCategorySelect(){
   noteCategory.innerHTML = '';
-  DEFAULT_CATEGORIES.forEach(cat=>{
+  categories.forEach(cat=>{
     const opt = document.createElement('option');
     opt.value = cat; opt.textContent = cat;
     noteCategory.appendChild(opt);
@@ -205,7 +284,7 @@ function updatePreview(){ mdPreview.innerHTML = marked.parse(noteContent.value |
 function startNew(){
   editingId = null;
   noteTitle.value = '';
-  noteCategory.value = DEFAULT_CATEGORIES[0];
+  noteCategory.value = categories[0];
   noteContent.value = '';
   cancelEditBtn.style.display = 'none';
   updatePreview();
