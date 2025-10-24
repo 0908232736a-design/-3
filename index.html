@@ -54,6 +54,61 @@
     .textarea-voice-row textarea {
       flex: 1;
     }
+    
+    /* 分類管理樣式 */
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .category-header h2 {
+      margin: 0;
+    }
+    #add-category-btn {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    #add-category-btn:hover {
+      background: #1976D2;
+    }
+    #category-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    #category-list li span {
+      flex: 1;
+    }
+    .delete-category-btn {
+      background: #f44336;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 8px;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .delete-category-btn:hover {
+      background: #d32f2f;
+    }
   </style>
 </head>
 <body>
@@ -69,7 +124,10 @@
     </header>
     <main>
       <aside class="sidebar">
-        <h2>分類</h2>
+        <div class="category-header">
+          <h2>分類</h2>
+          <button id="add-category-btn" title="新增自訂分類">+ 新增</button>
+        </div>
         <ul id="category-list"></ul>
         <div class="filter">
           <input type="text" id="search" placeholder="搜尋書名或內容..." />
