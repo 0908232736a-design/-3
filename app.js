@@ -20,16 +20,105 @@ const btnImport = document.getElementById('btn-import');
 const importFile = document.getElementById('import-file');
 const cancelEditBtn = document.getElementById('cancel-edit');
 const searchInput = document.getElementById('search');
+const voiceTitleBtn = document.getElementById('voice-title-btn');
+const voiceContentBtn = document.getElementById('voice-content-btn');
 
 let notes = [];
 let editingId = null;
 let activeCategory = '全部';
+
+// 語音辨識相關
+let recognition = null;
+let isRecognizing = false;
+let currentVoiceTarget = null; // 'title' or 'content'
+
+function initSpeechRecognition(){
+  // 檢查瀏覽器是否支援語音辨識
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition){
+    console.warn('此瀏覽器不支援語音辨識');
+    if(voiceTitleBtn) voiceTitleBtn.style.display = 'none';
+    if(voiceContentBtn) voiceContentBtn.style.display = 'none';
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'zh-TW'; // 設定為繁體中文
+  recognition.continuous = false; // 單次辨識
+  recognition.interimResults = false; // 只要最終結果
+
+  recognition.onstart = function(){
+    isRecognizing = true;
+    updateVoiceButtonState();
+  };
+
+  recognition.onresult = function(event){
+    const transcript = event.results[0][0].transcript;
+    if(currentVoiceTarget === 'title'){
+      noteTitle.value = transcript;
+    } else if(currentVoiceTarget === 'content'){
+      // 追加到心得內容後面
+      noteContent.value += (noteContent.value ? ' ' : '') + transcript;
+      updatePreview();
+    }
+  };
+
+  recognition.onerror = function(event){
+    console.error('語音辨識錯誤:', event.error);
+    if(event.error === 'no-speech'){
+      alert('未偵測到語音,請重試');
+    } else if(event.error === 'not-allowed'){
+      alert('未授權使用麥克風,請檢查瀏覽器設定');
+    } else {
+      alert('語音辨識發生錯誤: ' + event.error);
+    }
+    isRecognizing = false;
+    updateVoiceButtonState();
+  };
+
+  recognition.onend = function(){
+    isRecognizing = false;
+    updateVoiceButtonState();
+  };
+}
+
+function startVoiceInput(target){
+  if(!recognition){
+    alert('此瀏覽器不支援語音辨識');
+    return;
+  }
+  
+  if(isRecognizing){
+    recognition.stop();
+    return;
+  }
+
+  currentVoiceTarget = target;
+  try{
+    recognition.start();
+  }catch(e){
+    console.error('啟動語音辨識失敗:', e);
+  }
+}
+
+function updateVoiceButtonState(){
+  if(voiceTitleBtn){
+    voiceTitleBtn.textContent = isRecognizing && currentVoiceTarget === 'title' ? '🎤 錄音中...' : '🎤';
+    voiceTitleBtn.style.background = isRecognizing && currentVoiceTarget === 'title' ? '#ff4444' : '#4CAF50';
+  }
+  if(voiceContentBtn){
+    voiceContentBtn.textContent = isRecognizing && currentVoiceTarget === 'content' ? '🎤 錄音中...' : '🎤';
+    voiceContentBtn.style.background = isRecognizing && currentVoiceTarget === 'content' ? '#ff4444' : '#4CAF50';
+  }
+}
 
 function init(){
   loadNotes();
   renderCategoryList();
   populateCategorySelect();
   renderNotes();
+  initSpeechRecognition();
+  
   noteContent.addEventListener('input', updatePreview);
   noteForm.addEventListener('submit', onSave);
   btnNew.addEventListener('click', startNew);
@@ -38,6 +127,15 @@ function init(){
   importFile.addEventListener('change', onImportFile);
   cancelEditBtn.addEventListener('click', cancelEdit);
   searchInput.addEventListener('input', renderNotes);
+  
+  // 語音輸入按鈕事件
+  if(voiceTitleBtn){
+    voiceTitleBtn.addEventListener('click', ()=> startVoiceInput('title'));
+  }
+  if(voiceContentBtn){
+    voiceContentBtn.addEventListener('click', ()=> startVoiceInput('content'));
+  }
+  
   updatePreview();
 }
 
