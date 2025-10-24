@@ -3,7 +3,7 @@
    - 筆記欄位：書名（必填）、心得（選填）
    - 任何人都可新增/編輯/刪除（資料存在 localStorage）
 */
-const DEFAULT_CATEGORIES = ['小說','詩','散文','雜記'];
+const DEFAULT_CATEGORIES = ['社會關係','社會互動','社會結構','功能論','衝突論','互動論'];
 const STORAGE_KEY = 'reading_notes_simple_v1';
 
 // DOM elements
