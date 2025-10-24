@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>我的閱讀歷程檔案</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="site-title">我的閱讀歷程檔案</h1>
+      <div id="user-area">
+        <button id="btn-new">新增心得</button>
+        <button id="btn-export">匯出 JSON</button>
+        <input type="file" id="import-file" style="display:none" />
+        <button id="btn-import">匯入 JSON</button>
+      </div>
+    </header>
+
+    <main>
+      <aside class="sidebar">
+        <h2>分類</h2>
+        <ul id="category-list"></ul>
+        <div class="filter">
+          <input type="text" id="search" placeholder="搜尋書名或內容..." />
+        </div>
+      </aside>
+
+      <section class="editor-area">
+        <form id="note-form">
+          <input id="note-title" placeholder="書名（必填）" required />
+          <select id="note-category"></select>
+          <textarea id="note-content" rows="8" placeholder="在此撰寫心得（支援 Markdown，選填）"></textarea>
+          <div class="form-actions">
+            <button type="submit" id="save-btn">儲存</button>
+            <button type="button" id="cancel-edit" style="display:none">取消</button>
+          </div>
+        </form>
+
+        <div class="preview">
+          <h3>Markdown 即時預覽</h3>
+          <div id="md-preview" class="md-box"></div>
+        </div>
+      </section>
+
+      <section class="notes-area">
+        <h2>所有筆記</h2>
+        <div id="notes-list"></div>
+      </section>
+    </main>
+
+    <footer>
+      <small>由 GitHub Pages / Netlify 等靜態主機承載 • 本地儲存於使用者瀏覽器</small>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
