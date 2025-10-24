@@ -6,6 +6,55 @@
   <title>我的閱讀歷程檔案</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* 語音按鈕樣式 */
+    .input-with-voice {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .input-with-voice input,
+    .input-with-voice textarea {
+      flex: 1;
+    }
+    .voice-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+    .voice-btn:hover {
+      background: #45a049;
+      transform: scale(1.1);
+    }
+    .voice-btn.recording {
+      background: #ff4444;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .textarea-voice-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .textarea-voice-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .textarea-voice-row textarea {
+      flex: 1;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -18,7 +67,6 @@
         <button id="btn-import">匯入 JSON</button>
       </div>
     </header>
-
     <main>
       <aside class="sidebar">
         <h2>分類</h2>
@@ -27,35 +75,43 @@
           <input type="text" id="search" placeholder="搜尋書名或內容..." />
         </div>
       </aside>
-
       <section class="editor-area">
         <form id="note-form">
-          <input id="note-title" placeholder="書名（必填）" required />
+          <!-- 書名欄位 + 語音按鈕 -->
+          <div class="input-with-voice">
+            <input id="note-title" placeholder="書名（必填）" required />
+            <button type="button" id="voice-title-btn" class="voice-btn" title="點擊開始語音輸入">🎤</button>
+          </div>
+          
           <select id="note-category"></select>
-          <textarea id="note-content" rows="8" placeholder="在此撰寫心得（支援 Markdown，選填）"></textarea>
+          
+          <!-- 心得欄位 + 語音按鈕 -->
+          <div class="textarea-voice-container">
+            <div class="textarea-voice-row">
+              <textarea id="note-content" rows="8" placeholder="在此撰寫心得（支援 Markdown，選填）"></textarea>
+              <button type="button" id="voice-content-btn" class="voice-btn" title="點擊開始語音輸入">🎤</button>
+            </div>
+          </div>
+          
           <div class="form-actions">
             <button type="submit" id="save-btn">儲存</button>
             <button type="button" id="cancel-edit" style="display:none">取消</button>
           </div>
         </form>
-
         <div class="preview">
           <h3>Markdown 即時預覽</h3>
           <div id="md-preview" class="md-box"></div>
         </div>
       </section>
-
       <section class="notes-area">
         <h2>所有筆記</h2>
         <div id="notes-list"></div>
       </section>
     </main>
-
     <footer>
       <small>由 GitHub Pages / Netlify 等靜態主機承載 • 本地儲存於使用者瀏覽器</small>
     </footer>
   </div>
-
   <script src="app.js"></script>
 </body>
 </html>
