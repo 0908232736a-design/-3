@@ -14,11 +14,6 @@ const noteForm = document.getElementById('note-form');
 const noteTitle = document.getElementById('note-title');
 const noteContent = document.getElementById('note-content');
 const notesList = document.getElementById('notes-list');
-const mdPreview = document.getElementById('md-preview');
-const btnNew = document.getElementById('btn-new');
-const btnExport = document.getElementById('btn-export');
-const btnImport = document.getElementById('btn-import');
-const importFile = document.getElementById('import-file');
 const cancelEditBtn = document.getElementById('cancel-edit');
 const searchInput = document.getElementById('search');
 const voiceTitleBtn = document.getElementById('voice-title-btn');
@@ -33,10 +28,9 @@ let activeCategory = '全部';
 // 語音辨識相關
 let recognition = null;
 let isRecognizing = false;
-let currentVoiceTarget = null; // 'title' or 'content'
+let currentVoiceTarget = null;
 
 function initSpeechRecognition(){
-  // 檢查瀏覽器是否支援語音辨識
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SpeechRecognition){
     console.warn('此瀏覽器不支援語音辨識');
@@ -46,9 +40,9 @@ function initSpeechRecognition(){
   }
 
   recognition = new SpeechRecognition();
-  recognition.lang = 'zh-TW'; // 設定為繁體中文
-  recognition.continuous = false; // 單次辨識
-  recognition.interimResults = false; // 只要最終結果
+  recognition.lang = 'zh-TW';
+  recognition.continuous = false;
+  recognition.interimResults = false;
 
   recognition.onstart = function(){
     isRecognizing = true;
@@ -60,9 +54,7 @@ function initSpeechRecognition(){
     if(currentVoiceTarget === 'title'){
       noteTitle.value = transcript;
     } else if(currentVoiceTarget === 'content'){
-      // 追加到心得內容後面
       noteContent.value += (noteContent.value ? ' ' : '') + transcript;
-      updatePreview();
     }
   };
 
@@ -123,16 +115,10 @@ function init(){
   renderNotes();
   initSpeechRecognition();
   
-  noteContent.addEventListener('input', updatePreview);
   noteForm.addEventListener('submit', onSave);
-  btnNew.addEventListener('click', startNew);
-  btnExport.addEventListener('click', onExport);
-  btnImport.addEventListener('click', ()=>importFile.click());
-  importFile.addEventListener('change', onImportFile);
   cancelEditBtn.addEventListener('click', cancelEdit);
   searchInput.addEventListener('input', renderNotes);
   
-  // 語音輸入按鈕事件
   if(voiceTitleBtn){
     voiceTitleBtn.addEventListener('click', ()=> startVoiceInput('title'));
   }
@@ -140,12 +126,9 @@ function init(){
     voiceContentBtn.addEventListener('click', ()=> startVoiceInput('content'));
   }
   
-  // 新增分類按鈕
   if(addCategoryBtn){
     addCategoryBtn.addEventListener('click', addNewCategory);
   }
-  
-  updatePreview();
 }
 
 function loadNotes(){
@@ -200,7 +183,6 @@ function deleteCategory(cat){
   categories = categories.filter(c => c !== cat);
   saveCategories();
   
-  // 如果當前選中的是被刪除的分類,切換到「全部」
   if(activeCategory === cat){
     activeCategory = '全部';
   }
@@ -227,7 +209,6 @@ function renderCategoryList(){
     span.onclick = ()=>{ activeCategory=cat; renderCategoryList(); renderNotes(); }
     li.appendChild(span);
     
-    // 自訂分類才顯示刪除按鈕
     if(!DEFAULT_CATEGORIES.includes(cat)){
       const delBtn = document.createElement('button');
       delBtn.textContent = '✕';
@@ -279,18 +260,6 @@ function renderNotes(){
   });
 }
 
-function updatePreview(){ mdPreview.innerHTML = marked.parse(noteContent.value || ''); }
-
-function startNew(){
-  editingId = null;
-  noteTitle.value = '';
-  noteCategory.value = categories[0];
-  noteContent.value = '';
-  cancelEditBtn.style.display = 'none';
-  updatePreview();
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
 function startEdit(id){
   const note = notes.find(x=>x.id===id); if(!note) return;
   editingId = id;
@@ -298,11 +267,16 @@ function startEdit(id){
   noteCategory.value = note.category;
   noteContent.value = note.content;
   cancelEditBtn.style.display = 'inline-block';
-  updatePreview();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function cancelEdit(){ startNew(); }
+function cancelEdit(){
+  editingId = null;
+  noteTitle.value = '';
+  noteCategory.value = categories[0];
+  noteContent.value = '';
+  cancelEditBtn.style.display = 'none';
+}
 
 function onSave(e){
   e.preventDefault();
@@ -319,35 +293,17 @@ function onSave(e){
     const newNote = { id: uid(), title, category, content, createdAt: now, updatedAt: now };
     notes.push(newNote);
   }
-  saveNotes(); noteForm.reset(); updatePreview(); renderNotes(); cancelEditBtn.style.display='none';
+  saveNotes(); 
+  noteForm.reset(); 
+  renderNotes(); 
+  cancelEditBtn.style.display='none';
 }
 
 function removeNote(id){
   if(!confirm('確認刪除這則筆記？')) return;
-  notes = notes.filter(n=>n.id!==id); saveNotes(); renderNotes();
-}
-
-function onExport(){
-  const dataStr = JSON.stringify(notes, null, 2);
-  const blob = new Blob([dataStr], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'reading-notes-export.json'; a.click();
-  URL.revokeObjectURL(url);
-}
-
-function onImportFile(e){
-  const f = e.target.files[0]; if(!f) return;
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    try{
-      const arr = JSON.parse(reader.result);
-      if(Array.isArray(arr)){
-        arr.forEach(item=>{ if(!item.id) item.id = uid(); notes.push(item); });
-        saveNotes(); renderNotes(); alert('匯入完成');
-      } else alert('檔案內容不是有效的筆記陣列');
-    }catch(err){ alert('匯入失敗: ' + err.message); }
-  };
-  reader.readAsText(f); importFile.value='';
+  notes = notes.filter(n=>n.id!==id); 
+  saveNotes(); 
+  renderNotes();
 }
 
 init();
